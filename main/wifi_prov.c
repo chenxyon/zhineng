@@ -3,7 +3,9 @@
  * @brief    WiFi 配网业务适配层实现
  *
  * 功能：封装 wifi_manager 组件，对外提供状态查询、事件回调与手动配网入口
- * 修改：2026-10-03 新建
+ * 修改：2026-10-03 新建；start_portal() 按需求文档 4.3 修正为「先停 Web 服务 ->
+ *         再停 SoftAP -> 再进配网模式」，旧配置清理移到配网启动成功之后，
+ *         避免中途失败导致配置已丢
  *
  * @note     实现依据：需求文档 v3.0 第四章
  *          状态机本身由 wifi_manager 内部处理（重试计数、失败回落 SoftAP），
@@ -161,9 +163,6 @@ esp_err_t wifi_prov_start_portal(void)
 {
     ESP_LOGI(TAG, "手动进入配网模式");
 
-    /* 清掉旧配置，保证下次上电不会走 STA 直连 */
-    wifi_config_clear();
-
     /* 需求文档 4.3：先停配网页面服务，再停 SoftAP，避免驱动状态错乱 */
     wifi_webserver_stop();
     wifi_manager_softap_stop();
@@ -171,8 +170,14 @@ esp_err_t wifi_prov_start_portal(void)
     esp_err_t err = wifi_config_mode_start(WIFI_CONFIG_MODE_WEB);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "进入配网模式失败：%s", esp_err_to_name(err));
+        return err;
     }
-    return err;
+
+    /* 进入配网后清掉旧配置：否则下次上电会走 STA 直连而非配网页面 */
+    wifi_config_clear();
+    s_state = WIFI_PROV_STATE_PORTAL;
+    ESP_LOGI(TAG, "配网模式已启动");
+    return ESP_OK;
 }
 
 esp_err_t wifi_prov_connect(const char *ssid, const char *password)
