@@ -1,0 +1,7 @@
+Command: cmake -G Ninja -B D:\ESP32S3\zhineng\build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\esp\v6.1-rc1\tools\python\v6.1-rc1\venv\Scripts\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=False D:\ESP32S3\zhineng
+-- Minimal build - OFF
+-- git rev-parse returned 'fatal: not a git repository (or any of the parent directories): .git'
+-- Could not use 'git describe' to determine PROJECT_VER.
+-- Building ESP-IDF components for target esp32s3
+Invalid field "dependencies": Input should be a valid dictionary
+-- Configuring incomplete, errors occurred!

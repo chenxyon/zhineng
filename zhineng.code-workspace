@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../components"
+		}
+	],
+	"settings": {
+		"clangd.arguments": [
+			"--background-index",
+			"--query-driver=**",
+			"--compile-commands-dir=d:\\ESP32S3\\zhineng\\build"
+		]
+	}
+}

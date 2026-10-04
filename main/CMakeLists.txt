@@ -1,0 +1,21 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "board.c"
+        "app_wifi.c"
+        "oled_spi.c"
+        "max98357.c"
+        "w25q128.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        driver
+        esp_driver_gpio
+        esp_driver_spi
+        esp_driver_i2s
+        esp_driver_dma
+        esp_wifi
+        esp_event
+        esp_netif
+        nvs_flash
+        wifi_manager
+)

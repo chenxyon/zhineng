@@ -1,0 +1,2 @@
+source D:/ESP32S3/zhineng/build/gdbinit/symbols
+source D:/ESP32S3/zhineng/build/gdbinit/connect

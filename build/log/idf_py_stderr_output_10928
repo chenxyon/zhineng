@@ -1,0 +1,11 @@
+Command: ninja all
+ninja: error: remove(esp-idf\wpa_supplicant\CMakeFiles\__idf_wpa_supplicant.dir\src\common\ieee802_11_common.c.obj.d): The process cannot access the file because it is being used by another process.
+
+ninja: error: remove(esp-idf\wpa_supplicant\CMakeFiles\__idf_wpa_supplicant.dir\src\eap_peer\chap.c.obj.d): The process cannot access the file because it is being used by another process.
+
+ninja: error: remove(esp-idf\wpa_supplicant\CMakeFiles\__idf_wpa_supplicant.dir\src\eap_common\eap_wsc_common.c.obj.d): The process cannot access the file because it is being used by another process.
+
+ninja: error: remove(esp-idf\wpa_supplicant\CMakeFiles\__idf_wpa_supplicant.dir\src\crypto\sha1-tprf.c.obj.d): The process cannot access the file because it is being used by another process.
+
+ninja: error: remove(esp-idf\wpa_supplicant\CMakeFiles\__idf_wpa_supplicant.dir\src\eap_peer\eap_peap_common.c.obj.d): The process cannot access the file because it is being used by another process.
+
