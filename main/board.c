@@ -101,6 +101,24 @@ static const inmp441_cfg_t k_mic_cfg = {
     .channels       = 1,
 };
 
+/**
+ * INMP441 完整引脚定义
+ *
+ * 功能：集中描述本板麦克风的实际接线，含共用时钟脚
+ * 修改：2026-10-04 新增，从 k_audio_pins 拆出
+ *
+ * @note     SCK 和 WS 与 MAX98357A 共用（BCLK=35、LRC=36），
+ *          物理上接同一根 GPIO，代码里在 k_audio_pins 和 k_mic_pins
+ *          两处都写出来是为了让接线一目了然
+ */
+static const inmp441_pins_t k_mic_pins = {
+    .sck         = GPIO_NUM_35,    /* 与 MAX98357A BCLK 共用 */
+    .ws          = GPIO_NUM_36,    /* 与 MAX98357A LRC  共用 */
+    .sd          = GPIO_NUM_17,    /* 独立数据脚 */
+    .vdd         = GPIO_NUM_NC,   /* VCC 直连 3.3V，不经 GPIO */
+    .gnd         = GPIO_NUM_NC,   /* GND 直连 */
+};
+
 void board_log_pinout(void)
 {
     ESP_LOGI(TAG, "--- OLED ---   SCK=%d MOSI=%d CS=%d DC=%d RST=%d",
