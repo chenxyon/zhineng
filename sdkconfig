@@ -636,9 +636,7 @@ CONFIG_IDF_FIRMWARE_CHIP_ID=0x0009
 #
 # Build type
 #
-# default:
 CONFIG_APP_BUILD_TYPE_APP_2NDBOOT=y
-# default:
 # CONFIG_APP_BUILD_TYPE_RAM is not set
 # default:
 CONFIG_APP_BUILD_GENERATE_BINARIES=y
@@ -654,9 +652,7 @@ CONFIG_APP_BUILD_USE_FLASH_SECTIONS=y
 # CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES is not set
 # end of Minimize binary changes between builds
 
-# default:
 # CONFIG_APP_REPRODUCIBLE_BUILD is not set
-# default:
 # CONFIG_APP_NO_BLOBS is not set
 # end of Build type
 
@@ -672,7 +668,6 @@ CONFIG_APP_BUILD_USE_FLASH_SECTIONS=y
 #
 # Bootloader manager
 #
-# default:
 CONFIG_BOOTLOADER_COMPILE_TIME_DATE=y
 # default:
 CONFIG_BOOTLOADER_PROJECT_VER=1
@@ -681,7 +676,6 @@ CONFIG_BOOTLOADER_PROJECT_VER=1
 #
 # Application Rollback
 #
-# default:
 # CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE is not set
 # end of Application Rollback
 
@@ -724,8 +718,7 @@ CONFIG_BOOTLOADER_LOG_LEVEL=3
 #
 # Format
 #
-# default:
-# CONFIG_BOOTLOADER_LOG_COLORS is not set
+CONFIG_BOOTLOADER_LOG_COLORS=y
 # default:
 CONFIG_BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS=y
 # end of Format
@@ -754,13 +747,9 @@ CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT=y
 
 # default:
 CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V=y
-# default:
 # CONFIG_BOOTLOADER_FACTORY_RESET is not set
-# default:
 # CONFIG_BOOTLOADER_APP_TEST is not set
-# default:
 CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE=y
-# default:
 CONFIG_BOOTLOADER_WDT_ENABLE=y
 # default:
 # CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE is not set
@@ -1231,7 +1220,6 @@ CONFIG_GDMA_OBJ_DRAM_SAFE=y
 #
 # ESP-Driver:GPIO Configurations
 #
-# default:
 # CONFIG_GPIO_CTRL_FUNC_IN_IRAM is not set
 # end of ESP-Driver:GPIO Configurations
 
@@ -1427,14 +1415,9 @@ CONFIG_USJ_ENABLE_USB_SERIAL_JTAG=y
 #
 # Ethernet
 #
-# default:
-CONFIG_ETH_ENABLED=y
-# default:
-CONFIG_ETH_USE_SPI_ETHERNET=y
+# CONFIG_ETH_USE_SPI_ETHERNET is not set
 # default:
 # CONFIG_ETH_USE_OPENETH is not set
-# default:
-# CONFIG_ETH_TRANSMIT_MUTEX is not set
 # end of Ethernet
 
 #
