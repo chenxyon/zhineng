@@ -1,0 +1,27 @@
+# ESP32-S3 智能语音终端 分区表
+#
+# 容量依据：本模块内部 Flash 实际为 2 MB（sdkconfig CONFIG_ESPTOOLPY_FLASHSIZE="2MB"）
+# 分区表位于 0x8000，每项 0x1000 对齐
+#
+# 布局（2 MB = 0x200000）：
+#   0x000000  0x008000  分区表 + MD5
+#   0x009000  0x005000  nvs        20 KB   WiFi 凭据 + 加密 NVS（API Key）
+#   0x00E000  0x002000  otadata    8 KB    OTA 状态（保留，本版未启用 OTA）
+#   0x010000  0x1E0000  app0       1920 KB 主固件
+#   0x1F0000  0x010000  reserved   64 KB   预留
+#
+# 设计取舍：
+#   1) 采用**单应用分区**而非双 OTA。2 MB 空间无法同时容纳两个固件槽：
+#      当前含 WiFi 协议栈的固件已达 910 KB，加上中文字库后约 1.66 MB，
+#      双 OTA 需 2 x 1.66 MB = 3.3 MB，超出物理容量。
+#      若后续需要 OTA，必须改为外挂 W25Q128 存放 OTA 镜像，或换更大 Flash 的模块。
+#   2) app0 给 1920 KB（占 Flash 的 94%），保证固件 + 字库有充足余量。
+#   3) 中文字库（752 KB）**不放内部 Flash**，改挂 W25Q128 外部 Flash。
+#      内部 Flash 仅留 NVS（存 WiFi 配置与加密 API Key）+ otadata + 预留。
+#   4) 日志分区与 USB 导出分区同样挂 W25Q128，见需求文档 v3.0 第七章。
+#
+# 名称,     类型, 子类型,   偏移,      大小,     标志
+nvs,        data, nvs,      0x9000,   0x5000,
+otadata,    data, ota,      0xE000,   0x2000,
+app0,       app,  ota_0,    0x10000,  0x1E0000,
+reserved,   data, 0xff,     0x1F0000, 0x10000,

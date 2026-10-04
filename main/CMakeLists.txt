@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "board.c"
         "app_wifi.c"
+        "wifi_prov.c"
         "oled_spi.c"
         "max98357.c"
         "w25q128.c"
