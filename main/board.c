@@ -153,9 +153,9 @@ void board_init_devices(void)
     ESP_ERROR_CHECK(max98357_init(&k_audio_pins));
     ESP_ERROR_CHECK(max98357_start_task());
 
-    
+
     /* INMP441 麦克风 —— 复用功放的 I2S 全双工控制器，需在其后初始化 */
-    if (inmp441_init(&k_mic_cfg) != ESP_OK) {
+    if (inmp441_init(&k_mic_pins, &k_mic_cfg) != ESP_OK) {
         ESP_LOGW(TAG, "麦克风采集启动失败，唤醒/STT 不可用");
     }
 }
