@@ -26,15 +26,16 @@ extern "C" {
 /**
  * MAX98357A 硬件与音频配置
  *
- * 功能：集中描述本设备所需引脚与音频参数，由 main.c 构造后注入 init
+ * 功能：集中描述本设备所需引脚与音频参数，由 board.c 构造后注入 init
  * 修改：2026-10-03 新增，取代原先散落在 .c 里的 MAX98357_PIN_* 宏
- * 修改：2026-10-03 修正 i2s_port_t 在 v6.1 已移除，port 字段改用 int
+ * 修改：2026-10-04 新增 mic_din 字段；I2S 改为全双工，dout=功放、din=麦克风
  */
 typedef struct {
     int          port;           /*!< I2S 控制器编号（v6.1 中该字段类型为 int） */
     gpio_num_t   bclk;           /*!< 位时钟脚 */
     gpio_num_t   lrc;            /*!< 声道选择/左右声道脚 */
-    gpio_num_t   din;            /*!< 数据输入脚 */
+    gpio_num_t   din;            /*!< 数据输出脚（ESP32 → 功放） */
+    gpio_num_t   mic_din;        /*!< 数据输入脚（麦克风 → ESP32），全双工 */
     uint32_t     sample_rate_hz; /*!< 采样率 */
     uint32_t     mclk_multiple;  /*!< MCLK 相对采样率的倍数 */
     uint32_t     bclk_div;       /*!< MCLK 到 BCLK 的分频 */

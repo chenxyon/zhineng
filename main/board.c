@@ -11,7 +11,11 @@
  *                     CS=GPIO5,  DC=GPIO3, RST=GPIO4
  *                     (⚠ GPIO3/4/5 是 strap 脚，仅上电采样前需高阻)
  *           W25Q128  : CS=GPIO39, SCK=GPIO40, MOSI=GPIO41, MISO=GPIO42
- *           MAX98357 : BCLK=GPIO18, LRC=GPIO19, DIN=GPIO20 (避开 PSRAM GPIO35~37)
+ *           I2S 全双工（PSRAM 未启用，35~37 可用）：
+ *           共用时钟：BCLK=GPIO35, LRC=GPIO36
+ *                     MAX98357A 数据出=dout=GPIO37
+ *                     INMP441   数据入=din =GPIO17
+ *           （原 18/19/20 为误配，已更正为 35/36/37）
  */
 #include <stdint.h>
 
@@ -45,12 +49,15 @@ static const oled_spi_pins_t k_oled_pins = {
  *
  * 功能：声明本板功放的实际引脚与音频参数
  * 修改：2026-10-03 新增，字段按 ESP-IDF v6.1 I2S API 调整
+ * 修改：2026-10-04 引脚由 18/19/20 更正为 35/36/37（实际硬件接线）；
+ *         新增 mic_din 字段（GPIO17，INMP441 数据输入，I2S 全双工共用控制器）
  */
 static const max98357_pins_t k_audio_pins = {
     .port            = I2S_NUM_0,
-    .bclk            = GPIO_NUM_18,
-    .lrc             = GPIO_NUM_19,
-    .din             = GPIO_NUM_20,
+    .bclk            = GPIO_NUM_35,
+    .lrc             = GPIO_NUM_36,
+    .din             = GPIO_NUM_37,    /* 功放 DIN，ESP32 输出 */
+    .mic_din         = GPIO_NUM_17,    /* INMP441 SD，ESP32 输入 */
     .sample_rate_hz  = 22050,
     .mclk_multiple   = I2S_MCLK_MULTIPLE_256,
     .bclk_div        = 8,
@@ -83,8 +90,9 @@ void board_log_pinout(void)
     ESP_LOGI(TAG, "--- OLED ---   SCK=%d MOSI=%d CS=%d DC=%d RST=%d",
              (int)k_oled_pins.sck, (int)k_oled_pins.mosi, (int)k_oled_pins.cs,
              (int)k_oled_pins.dc,  (int)k_oled_pins.rst);
-    ESP_LOGI(TAG, "--- 功放 ---   BCLK=%d LRC=%d DIN=%d",
-             (int)k_audio_pins.bclk, (int)k_audio_pins.lrc, (int)k_audio_pins.din);
+    ESP_LOGI(TAG, "--- 功放 ---   BCLK=%d LRC=%d DIN=%d MIC=%d",
+             (int)k_audio_pins.bclk, (int)k_audio_pins.lrc,
+             (int)k_audio_pins.din, (int)k_audio_pins.mic_din);
     ESP_LOGI(TAG, "--- Flash ---  CS=%d SCK=%d MOSI=%d MISO=%d",
              (int)k_flash_pins.cs, (int)k_flash_pins.sck,
              (int)k_flash_pins.mosi, (int)k_flash_pins.miso);
