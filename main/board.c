@@ -85,6 +85,22 @@ static const w25q128_pins_t k_flash_pins = {
     .max_transfer_sz  = 4096,
 };
 
+/**
+ * INMP441 采集参数
+ *
+ * 功能：麦克风采集参数，由 max98357 的 I2S 全双工控制器提供时钟
+ * 修改：2026-10-04 新增
+ *
+ * @note     采样率与功放一致（22050），保证共用 I2S 时隙对齐；
+ *         后续接 ESP-SR 唤醒时如模型要求 16 kHz，需将功放与麦克风
+ *         采样率一起改为 16000
+ */
+static const inmp441_cfg_t k_mic_cfg = {
+    .sample_rate_hz = 22050,
+    .frame_ms       = 50,
+    .channels       = 1,
+};
+
 void board_log_pinout(void)
 {
     ESP_LOGI(TAG, "--- OLED ---   SCK=%d MOSI=%d CS=%d DC=%d RST=%d",
@@ -118,6 +134,11 @@ void board_init_devices(void)
     /* 功放 —— 音频链路基础，失败直接中止 */
     ESP_ERROR_CHECK(max98357_init(&k_audio_pins));
     ESP_ERROR_CHECK(max98357_start_task());
+
+    /* INMP441 麦克风 —— 复用功放的 I2S 全双工控制器，需在其后初始化 */
+    if (inmp441_init(&k_mic_cfg) != ESP_OK) {
+        ESP_LOGW(TAG, "麦克风采集启动失败，唤醒/STT 不可用");
+    }
 }
 
 const max98357_pins_t *board_audio_config(void)

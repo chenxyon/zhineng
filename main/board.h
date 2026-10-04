@@ -15,6 +15,7 @@
 
 #include "oled_spi.h"
 #include "max98357.h"
+#include "inmp441.h"
 #include "w25q128.h"
 
 #ifdef __cplusplus
@@ -26,15 +27,17 @@ extern "C" {
  *
  * 功能：把接线打印到日志，便对着原理图 / 实物核对
  * 修改：2026-10-03 从 main.c 拆出
+ * 修改：2026-10-04 增加麦克风行
  */
 void board_log_pinout(void);
 
 /**
  * @brief  初始化全部外设
  *
- * 功能：依次初始化 OLED、Flash、功放；失败不致命（仅警告），
+ * 功能：依次初始化 OLED、Flash、功放、麦克风；失败不致命（仅警告），
  *       仅功放失败时会 ERROR_CHECK abort。
  * 修改：2026-10-03 从 main.c 拆出
+ * 修改：2026-10-04 新增 INMP441 麦克风采集（复用功放 I2S 全双工）
  */
 void board_init_devices(void);
 
