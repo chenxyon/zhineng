@@ -10,6 +10,7 @@
  *          本文件只做 4.3 的收尾顺序与事件转发，不重复实现状态机。
  */
 
+#include <stdint.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"

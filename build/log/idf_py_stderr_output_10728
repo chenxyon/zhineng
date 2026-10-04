@@ -1,9 +1,0 @@
-Command: cmake -G Ninja -B D:\ESP32S3\zhineng\build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\esp\v6.1-rc1\tools\python\v6.1-rc1\venv\Scripts\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=False D:\ESP32S3\zhineng
-CMake Error at C:/esp/v6.1-rc1/esp-idf/tools/cmake/build.cmake:707 (message):
-  ERROR: Manifest is not valid
-
-Call Stack (most recent call first):
-  C:/esp/v6.1-rc1/esp-idf/tools/cmake/project.cmake:868 (idf_build_process)
-  CMakeLists.txt:3 (project)
-
-
