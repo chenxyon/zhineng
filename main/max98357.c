@@ -74,15 +74,15 @@ esp_err_t max98357_init(const max98357_pins_t *pins)
             .bclk = pins->bclk,
             .ws   = pins->lrc,
             .dout = pins->din,
-            .din  = I2S_GPIO_UNUSED,
+            .din  = pins->mic_din,
         },
     };
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(s_spk, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(s_spk));
 
     s_ready = true;
-    ESP_LOGI(TAG, "初始化完成 -> BCLK=%d LRC=%d DIN=%d 采样率=%u",
-             (int)pins->bclk, (int)pins->lrc, (int)pins->din,
+    ESP_LOGI(TAG, "初始化完成 -> BCLK=%d LRC=%d 功放=%d 麦克风=%d 采样率=%u",
+             (int)pins->bclk, (int)pins->lrc, (int)pins->din, (int)pins->mic_din,
              (unsigned)pins->sample_rate_hz);
     return ESP_OK;
 }
