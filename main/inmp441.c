@@ -16,6 +16,7 @@
 #include "freertos/ringbuf.h"
 
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 
 #include "inmp441.h"
 #include "max98357.h"
