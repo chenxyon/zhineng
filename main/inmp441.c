@@ -30,6 +30,7 @@ static TaskHandle_t  s_task   = NULL;
 static RingbufHandle_t s_buf  = NULL;
 static bool           s_running = false;
 static inmp441_cfg_t  s_cfg;
+static inmp441_pins_t s_pins;
 
 /**
  * @brief  采集任务体
@@ -67,16 +68,17 @@ static void mic_task(void *arg)
     vTaskDelete(NULL);
 }
 
-esp_err_t inmp441_init(const inmp441_cfg_t *cfg)
+esp_err_t inmp441_init(const inmp441_pins_t *pins, const inmp441_cfg_t *cfg)
 {
-    if (cfg == NULL) {
+    if (pins == NULL || cfg == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_running) {
         return ESP_OK;
     }
 
-    s_cfg = *cfg;
+    s_pins = *pins;
+    s_cfg  = *cfg;
     if (s_cfg.channels == 0) {
         s_cfg.channels = 1;
     }
@@ -98,8 +100,9 @@ esp_err_t inmp441_init(const inmp441_cfg_t *cfg)
         return ESP_ERR_NO_MEM;
     }
 
-    ESP_LOGI(TAG, "INMP441 采集就绪 -> 采样率=%u 每帧=%u ms 缓冲≈%d ms",
-             (unsigned)s_cfg.sample_rate_hz, (unsigned)s_cfg.frame_ms,
+    ESP_LOGI(TAG, "INMP441 就绪 -> SCK=%d WS=%d SD=%d 采样率=%u 缓冲≈%d ms",
+             (int)s_pins.sck, (int)s_pins.ws, (int)s_pins.sd,
+             (unsigned)s_cfg.sample_rate_hz,
              (int)(MIC_BUF_BLOCK_BYTES * MIC_BUF_DEPTH / 2 / s_cfg.sample_rate_hz * 1000));
     return ESP_OK;
 }

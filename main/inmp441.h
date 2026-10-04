@@ -23,10 +23,29 @@
 #include <stdint.h>
 
 #include "esp_err.h"
+#include "driver/gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * INMP441 引脚与电源
+ *
+ * 功能：声明本板麦克风的实际接线，含共用时钟脚
+ * 修改：2026-10-04 新增
+ *
+ * @note     sck / ws 与 MAX98357A 共用（物理接同一 GPIO）；
+ *          vdd / gnd 通常不接 GPIO，而是直连 3.3V 与 GND，
+ *          代码里置 GPIO_NUM_NC 仅为占位，不会真的去初始化
+ */
+typedef struct {
+    gpio_num_t sck;       /*!< SCK，位时钟（与功放 BCLK 共用） */
+    gpio_num_t ws;        /*!< WS，字选择（与功放 LRC 共用）；须硬接 3.3V/GND */
+    gpio_num_t sd;        /*!< SD，数据输出（麦克风 → ESP32 输入脚） */
+    gpio_num_t vdd;       /*!< 供电脚，通常 GPIO_NUM_NC */
+    gpio_num_t gnd;       /*!< 地，通常 GPIO_NUM_NC */
+} inmp441_pins_t;
 
 /**
  * 采集配置
@@ -45,11 +64,13 @@ typedef struct {
  *
  * 功能：启动 I2S 采集任务，持续写入内部环形缓冲
  * 修改：2026-10-04 新建
+ * 修改：2026-10-04 增加 pins 参数，引脚不再依赖 max98357
  *
- * @param cfg  采集参数
+ * @param pins 引脚定义，不可为 NULL
+ * @param cfg  采集参数，不可为 NULL
  * @return ESP_OK 成功
  */
-esp_err_t inmp441_init(const inmp441_cfg_t *cfg);
+esp_err_t inmp441_init(const inmp441_pins_t *pins, const inmp441_cfg_t *cfg);
 
 /**
  * @brief  停止 INMP441 采集
