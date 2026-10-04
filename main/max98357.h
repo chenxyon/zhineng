@@ -80,10 +80,22 @@ esp_err_t max98357_play_beep(void);
 /**
  * @brief  启动后台播放任务
  *
- * 功能：按 pins->task_period_ms 周期重复播放方波
+ * 功能：按 pins->task_period_ms 周期检查自测开关，决定是否播放方波
  * 修改：2026-10-03 新增
+ * 修改：2026-10-04 改为受 max98357_set_selftest_beep() 控制，默认不响
  */
 esp_err_t max98357_start_task(void);
+
+/**
+ * @brief  开关周期性自测方波
+ *
+ * 功能：仅用于验证音频链路。正式功能接入 TTS 后应保持关闭，
+ *       否则会与语音播报抢占 I2S 通道
+ * 修改：2026-10-04 新增
+ *
+ * @param enable true 开启周期方波，false 静音
+ */
+void max98357_set_selftest_beep(bool enable);
 
 /**
  * @brief  查询功放是否初始化成功

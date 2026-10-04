@@ -6,6 +6,10 @@
  * 修改：2026-10-03 新建；start_portal() 按需求文档 4.3 修正为「先停 Web 服务 ->
  *         再停 SoftAP -> 再进配网模式」，旧配置清理移到配网启动成功之后，
  *         避免中途失败导致配置已丢
+ * 修改：2026-10-04 业务层事件监听移到 wifi_manager_init() 之后注册。原先在其之前
+ *         注册时 WIFI_EVENT 事件基尚未创建，esp_event_handler_register 返回
+ *         ESP_ERR_INVALID_STATE，经 ESP_ERROR_CHECK 触发 abort 重启；
+ *         且监听注册失败现降级为日志告警，不再致命
  *
  * @note     实现依据：需求文档 v3.0 第四章
  *          状态机本身由 wifi_manager 内部处理（重试计数、失败回落 SoftAP），
@@ -111,13 +115,9 @@ esp_err_t wifi_prov_init(void)
     }
     ESP_ERROR_CHECK(err);
 
-    /* 注册业务层事件监听（组件内部另有一份，层级不同，互不冲突） */
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                              prov_event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                              prov_event_handler, NULL));
-
-    /* 组件配置：需求文档 4.1 要求失败 5 次回落配网模式 */
+    /* 先初始化组件：WiFi 驱动与事件基由组件内部创建，
+       业务层监听必须在其之后注册，否则 esp_event_handler_register
+       会返回 ESP_ERR_INVALID_STATE 并被 ESP_ERROR_CHECK 触发重启 */
     wifi_manager_config_t cfg = {
         .retry_config = {
             .max_retry_count   = 5,
@@ -139,6 +139,18 @@ esp_err_t wifi_prov_init(void)
     };
 
     ESP_ERROR_CHECK(wifi_manager_init(&cfg));
+
+    /* 组件初始化完成后再注册业务层监听：
+       esp_event_handler_register 失败不应导致重启，降级为日志告警 */
+    if (esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                   prov_event_handler, NULL) != ESP_OK) {
+        ESP_LOGW(TAG, "WIFI_EVENT 监听注册失败，状态跟踪将不完整");
+    }
+    if (esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                   prov_event_handler, NULL) != ESP_OK) {
+        ESP_LOGW(TAG, "IP_EVENT 监听注册失败，状态跟踪将不完整");
+    }
+
     ESP_LOGI(TAG, "配网子系统就绪");
     return ESP_OK;
 }

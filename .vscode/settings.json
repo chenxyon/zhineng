@@ -12,6 +12,6 @@
       "--query-driver=**",
       "--compile-commands-dir=d:\\ESP32S3\\zhineng\\build"
     ],
-    "idf.flashType": "JTAG",
-    "idf.port": "COM5"
+    "idf.flashType": "UART",
+    "idf.port": "COM6"
 }

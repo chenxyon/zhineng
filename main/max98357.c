@@ -30,6 +30,7 @@ static const char *TAG = "AUDIO";
 static i2s_chan_handle_t s_spk    = NULL;
 static TaskHandle_t      s_task   = NULL;
 static bool              s_ready  = false;
+static bool              s_selftest_beep = false;  /*!< 自测方波开关，默认关 */
 static max98357_pins_t   s_cfg;
 
 esp_err_t max98357_init(const max98357_pins_t *pins)
@@ -134,13 +135,22 @@ esp_err_t max98357_play_beep(void)
  *
  * 功能：后台持续验证音频链路
  * 修改：2026-10-03 改为读取 s_cfg 中的参数，不再引用全局宏
+ * 修改：2026-10-04 增加自测开关，默认关闭。上电持续「滴」声干扰配网与
+ *         对话调试，等阶段 7 接入 TTS 后由语音输出取代此测试音
  */
 static void audio_task(void *arg)
 {
     for (;;) {
-        max98357_play_beep();
+        if (s_selftest_beep) {
+            max98357_play_beep();
+        }
         vTaskDelay(pdMS_TO_TICKS(s_cfg.task_period_ms));
     }
+}
+
+void max98357_set_selftest_beep(bool enable)
+{
+    s_selftest_beep = enable;
 }
 
 esp_err_t max98357_start_task(void)
