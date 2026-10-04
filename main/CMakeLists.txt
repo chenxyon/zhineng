@@ -6,6 +6,7 @@ idf_component_register(
         "wifi_prov.c"
         "oled_spi.c"
         "max98357.c"
+        "inmp441.c"
         "w25q128.c"
     INCLUDE_DIRS "."
     REQUIRES
