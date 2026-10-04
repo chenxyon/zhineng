@@ -130,6 +130,8 @@ void board_log_pinout(void)
     ESP_LOGI(TAG, "--- Flash ---  CS=%d SCK=%d MOSI=%d MISO=%d",
              (int)k_flash_pins.cs, (int)k_flash_pins.sck,
              (int)k_flash_pins.mosi, (int)k_flash_pins.miso);
+    ESP_LOGI(TAG, "--- 麦克风 --- SCK=%d WS=%d SD=%d (共用功放时钟)",
+             (int)k_mic_pins.sck, (int)k_mic_pins.ws, (int)k_mic_pins.sd);
 }
 
 void board_init_devices(void)
