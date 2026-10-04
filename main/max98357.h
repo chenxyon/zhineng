@@ -71,6 +71,14 @@ esp_err_t max98357_init(const max98357_pins_t *pins);
 esp_err_t max98357_play(const int16_t *data, size_t bytes, uint32_t timeout_ms);
 
 /**
+ * @brief  读取麦克风 PCM（I2S 全双工接收）
+ *
+ * 功能：全双工模式必须与写配对消费，否则接收 DMA 满溢出
+ * 修改：2026-10-04 新增
+ */
+esp_err_t max98357_mic_read(int16_t *data, size_t bytes, size_t *written, uint32_t timeout_ms);
+
+/**
  * @brief  播放一次方波（频率/时长取自 pins）
  *
  * 功能：生成方波并送入功放，用于验证音频链路

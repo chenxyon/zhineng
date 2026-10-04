@@ -97,6 +97,32 @@ esp_err_t max98357_play(const int16_t *data, size_t bytes, uint32_t timeout_ms)
     return i2s_channel_write(s_spk, data, bytes, &written, timeout_ms);
 }
 
+/**
+ * @brief  读取麦克风 PCM（I2S 全双工接收）
+ *
+ * 功能：从 I2S 接收 DMA 读 INMP441 数据；全双工模式必须与写配对消费，
+ *       否则接收缓冲满溢出
+ * 修改：2026-10-04 新增，配合 INMP441 数据脚（GPIO17）
+ *
+ * @param data       接收 PCM 缓冲区（int16_t 对齐）
+ * @param bytes      字节数，必须为 2 的倍数
+ * @param written    实际读取字节数（输出，可传 NULL）
+ * @param timeout_ms 超时毫秒
+ */
+esp_err_t max98357_mic_read(int16_t *data, size_t bytes, size_t *written, uint32_t timeout_ms)
+{
+    if (!s_ready || data == NULL || bytes == 0 || (bytes % sizeof(int16_t)) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t read_cnt = 0;
+    esp_err_t ret = i2s_channel_read(s_spk, data, bytes, &read_cnt, timeout_ms);
+    if (written != NULL) {
+        *written = read_cnt;
+    }
+    return ret;
+}
+
 esp_err_t max98357_play_beep(void)
 {
     if (!s_ready) {
