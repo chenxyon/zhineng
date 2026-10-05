@@ -12,6 +12,9 @@
  *         .bclk_pin_num/.ws_pin_num/.dout_pin_num/.din_pin_num -> .bclk/.ws/.dout/.din
  * 修改：2026-10-03 引脚改为由 max98357_pins_t 参数注入
  * 修改：2026-10-03 方波频率由硬编码周期 50 改为按 pins->beep_freq_hz 计算
+ * 修改：2026-10-04 改为 I2S 全双工：i2s_new_channel 同时分配 TX(功放)+RX(麦克风)
+ *         两个句柄，两通道都 init/enable；max98357_mic_read 改用 RX 句柄读取。
+ *         此前传 NULL 只建 TX 通道，RX 读取报 "this channel is not rx channel"
  */
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +30,8 @@
 
 static const char *TAG = "AUDIO";
 
-static i2s_chan_handle_t s_spk    = NULL;
+static i2s_chan_handle_t s_spk    = NULL;  /*!< 发送通道（功放） */
+static i2s_chan_handle_t s_mic_rx = NULL;  /*!< 接收通道（INMP441），与 s_spk 同一 I2S 外设全双工 */
 static TaskHandle_t      s_task   = NULL;
 static bool              s_ready  = false;
 static bool              s_selftest_beep = false;  /*!< 自测方波开关，默认关 */
@@ -51,7 +55,9 @@ esp_err_t max98357_init(const max98357_pins_t *pins)
         .auto_clear    = true,
         .allow_pd      = false,
     };
-    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &s_spk, NULL));
+    /* 全双工：一次分配 TX（功放）+ RX（麦克风）两个通道句柄到同一 I2S 外设。
+       第二个参数传 NULL 会得到纯 TX 通道，RX 读取会报 "not rx channel" */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &s_spk, &s_mic_rx));
 
     i2s_std_config_t std_cfg = {
         .clk_cfg = {
@@ -73,11 +79,15 @@ esp_err_t max98357_init(const max98357_pins_t *pins)
             .mclk = I2S_GPIO_UNUSED,
             .bclk = pins->bclk,
             .ws   = pins->lrc,
-            .dout = pins->din,
-            .din  = pins->mic_din,
+            .dout = pins->din,      /* 功放数据脚（ESP32 输出） */
+            .din  = pins->mic_din,  /* 麦克风数据脚（ESP32 输入） */
         },
     };
+    /* 全双工两个通道都要初始化、都要使能（参照 IDF i2s_usb 示例）。
+       MCLK 由后初始化的通道产生，先 init RX 再 init TX，使 MCLK 来自功放侧 */
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(s_mic_rx, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(s_spk, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(s_mic_rx));
     ESP_ERROR_CHECK(i2s_channel_enable(s_spk));
 
     s_ready = true;
@@ -116,7 +126,7 @@ esp_err_t max98357_mic_read(int16_t *data, size_t bytes, size_t *written, uint32
     }
 
     size_t read_cnt = 0;
-    esp_err_t ret = i2s_channel_read(s_spk, data, bytes, &read_cnt, timeout_ms);
+    esp_err_t ret = i2s_channel_read(s_mic_rx, data, bytes, &read_cnt, timeout_ms);
     if (written != NULL) {
         *written = read_cnt;
     }

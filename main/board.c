@@ -155,6 +155,10 @@ void board_init_devices(void)
     ESP_ERROR_CHECK(max98357_init(&k_audio_pins));
     ESP_ERROR_CHECK(max98357_start_task());
 
+    /* 上电单响一次：确认喇叭链路通（全双工改造后首次验证）。
+       自测循环默认关（max98357_set_selftest_beep(false)），避免持续响；
+       需要连续自测时手动置 true。 */
+    max98357_play_beep();
 
     /* INMP441 麦克风 —— 复用功放的 I2S 全双工控制器，需在其后初始化 */
     if (inmp441_init(&k_mic_pins, &k_mic_cfg) != ESP_OK) {
