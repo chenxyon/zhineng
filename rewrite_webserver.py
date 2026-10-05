@@ -162,7 +162,7 @@ static void wifi_connect_wrapper(void *arg) {
 """
 
 # Read original handlers
-with open(r'd:\components\wifi_manager\src\wifi_webserver.c', 'r', encoding='utf-8') as f:
+with open(r'd:\ESP32S3\zhineng\wifi_webserver_utf8.c', 'r', encoding='utf-8') as f:
     orig = f.read()
 
 idx = orig.find('static const char *auth_type_str')
