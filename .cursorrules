@@ -1,0 +1,6 @@
+# 项目规则
+
+## 编译与烧录
+- 编译(build)和烧录(flash/monitor/erase-flash)命令**一律由用户自己操作**
+- AI 只负责代码修改和分析，不要调用 idf.py build、flash、monitor、erase-flash 等终端命令
+- 修改完代码后告知用户"已修改，请手动编译烧录验证"即可
