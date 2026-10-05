@@ -2022,7 +2022,6 @@ CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
 # CONFIG_ESP_PANIC_HANDLER_IRAM is not set
 # default:
 # CONFIG_ESP_DEBUG_STUBS_ENABLE is not set
-# default:
 CONFIG_ESP_DEBUG_OCDAWARE=y
 # default:
 CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4=y
@@ -3825,7 +3824,6 @@ CONFIG_WIFI_WEBSERVER_PORT=80
 # end of WIFI Manager Configuration
 # end of Component config
 
-# default:
 # CONFIG_IDF_EXPERIMENTAL_FEATURES is not set
 
 # Deprecated options for backward compatibility

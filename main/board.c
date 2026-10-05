@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file     board.c
  * @brief    板级装配层 —— 引脚定义与设备初始化
  *
@@ -13,7 +13,7 @@
  *           W25Q128  : CS=GPIO39, SCK=GPIO40, MOSI=GPIO41, MISO=GPIO42
  *           I2S 全双工（PSRAM 未启用，35~37 可用）：
  *           共用时钟：BCLK=GPIO35, LRC=GPIO36
- *                     MAX98357A 数据出=dout=GPIO37
+ *                     MAX98357 数据出=dout=GPIO37
  *                     INMP441   数据入=din =GPIO17
  *           （原 18/19/20 为误配，已更正为 35/36/37）
  */
@@ -46,21 +46,21 @@ static const oled_spi_pins_t k_oled_pins = {
 };
 
 /**
- * MAX98357A I2S Class-D 功放接线
+ * MAX98357 I2S Class-D 功放接线
  *
  * 功能：声明本板功放的实际引脚与音频参数
  * 修改：2026-10-03 新增，字段按 ESP-IDF v6.1 I2S API 调整
  * 修改：2026-10-04 引脚由 18/19/20 更正为 35/36/37（实际硬件接线）；
  *         新增 mic_din 字段（GPIO17，INMP441 数据输入，I2S 全双工共用控制器）
  * 修改：2026-10-05 从原 35/36/37 换为 20/19/18；BCLK=DIN 互换，
- *         现 BCLK=GPIO20, LRC=GPIO19, DIN=GPIO18，麦克风 SCK/WS 同步改接，SD 保持 GPIO17
+ *         现 BCLK=GPIO20, LRC=GPIO19, DIN=GPIO18，麦克风 SCK/WS 同步接 GPIO20/19，SD 接 GPIO17
  */
 static const max98357_pins_t k_audio_pins = {
     .port            = I2S_NUM_0,
-    .bclk            = GPIO_NUM_20,
-    .lrc             = GPIO_NUM_19,
-    .din             = GPIO_NUM_18,    /* 功放 DIN，ESP32 输出 */
-    .mic_din         = GPIO_NUM_17,    /* INMP441 SD，ESP32 输入 */
+    .bclk            = GPIO_NUM_20,   /* I2S BCLK，同时接到 INMP441 SCK */
+    .lrc             = GPIO_NUM_19,   /* I2S WS/LRC，同时接到 INMP441 WS */
+    .din             = GPIO_NUM_18,   /* 功放 DIN（ESP32 SDOUT 输出） */
+    .mic_din         = GPIO_NUM_17,   /* INMP441 SD（ESP32 SDIN 输入） */
     .sample_rate_hz  = 22050,
     .mclk_multiple   = I2S_MCLK_MULTIPLE_256,
     .bclk_div        = 8,
@@ -110,14 +110,14 @@ static const inmp441_cfg_t k_mic_cfg = {
  * 功能：集中描述本板麦克风的实际接线，含共用时钟脚
  * 修改：2026-10-04 新增，从 k_audio_pins 拆出
  *
- * @note     SCK 和 WS 与 MAX98357A 共用（BCLK=20、LRC=19），
+ * @note     SCK 和 WS 与 MAX98357 BCLK/LRC 共用（BCLK=20、LRC=19），
  *          物理上接同一根 GPIO，代码里在 k_audio_pins 和 k_mic_pins
  *          两处都写出来是为了让接线一目了然
  */
 static const inmp441_pins_t k_mic_pins = {
-    .sck         = GPIO_NUM_18,    /* 与 MAX98357A BCLK 共用 */
-    .ws          = GPIO_NUM_19,    /* 与 MAX98357A LRC  共用 */
-    .sd          = GPIO_NUM_17,    /* 独立数据脚 */
+    .sck         = GPIO_NUM_20,    /* 与 MAX98357 BCLK 共用（I2S 外设统一生成） */
+    .ws          = GPIO_NUM_19,    /* 与 MAX98357 LRC  共用 */
+    .sd          = GPIO_NUM_17,    /* 独立数据脚，接 I2S SDIN */
     .vdd         = GPIO_NUM_NC,   /* VCC 直连 3.3V，不经 GPIO */
     .gnd         = GPIO_NUM_NC,   /* GND 直连 */
 };
@@ -155,7 +155,7 @@ void board_init_devices(void)
     }
 
     /* 功放 —— 音频链路基础，失败直接中止 */
-    /* GAIN(GPIO38) 拉高：MAX98357A 增益使能（逻辑高 = +6 dB，正常输出）；
+    /* GAIN(GPIO38) 拉高：MAX98357 增益使能（逻辑高 = +6 dB，正常输出）；
        不驱动此脚芯片可能处于静音或低功耗状态，喇叭无输出 */
     gpio_config_t gain_cfg = {
         .pin_bit_mask = (1ULL << GPIO_NUM_38),

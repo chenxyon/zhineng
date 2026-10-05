@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file     inmp441.h
  * @brief    INMP441 I2S 数字 MEMS 麦克风驱动接口
  *
@@ -35,7 +35,7 @@ extern "C" {
  * 功能：声明本板麦克风的实际接线，含共用时钟脚
  * 修改：2026-10-04 新增
  *
- * @note     sck / ws 与 MAX98357A 共用（物理接同一 GPIO）；
+ * @note     sck / ws 与 MAX98357 共用（物理接同一 GPIO）；
  *          vdd / gnd 通常不接 GPIO，而是直连 3.3V 与 GND，
  *          代码里置 GPIO_NUM_NC 仅为占位，不会真的去初始化
  */

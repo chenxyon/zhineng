@@ -1,6 +1,6 @@
-/**
+﻿/**
  * @file     max98357.c
- * @brief    MAX98357A (I2S Class-D 功放) 驱动实现
+ * @brief    MAX98357 (I2S Class-D 功放) 驱动实现
  *
  * 功能：I2S 通道初始化、音频发送、方波生成与后台测试任务
  * 修改：2026-10-03 按 ESP-IDF v6.1 I2S 新 API 重写，修复以下 18 处编译错误：
@@ -73,7 +73,7 @@ esp_err_t max98357_init(const max98357_pins_t *pins)
             .slot_mask      = I2S_STD_SLOT_LEFT,
             .ws_width       = 16,
             .ws_pol         = false,
-            .bit_shift      = true,
+            .bit_shift      = false,     /* MAX98357A 要求标准 I2S 时序；true 会移位导致无声 */
         },
         .gpio_cfg = {
             .mclk = I2S_GPIO_UNUSED,
