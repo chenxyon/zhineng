@@ -1,0 +1,2 @@
+# fix script
+print(" ok\)
