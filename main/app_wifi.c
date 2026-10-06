@@ -2,68 +2,98 @@
  * @file     app_wifi.c
  * @brief    WiFi 配网业务层
  *
- * 功能：配网事件回调、状态查询、未来 UI/TTS 接入点
- * 修改：2026-10-03 新建（从 main.c 拆出 on_wifi_event）
- *
- * @note     当前阶段事件仅打印日志，等阶段 5 (字体) 与阶段 7 (TTS) 就绪后
- *          在此接入 0.96" 屏显示与语音播报。
+ * 功能：配网事件回调、状态查询、WiFi 连接成功时播放旋律
+ * 修改：2026-10-06 合并 wifi_prov，改用 wifi_manager API；
+ *          加入「连接成功 → 小星星」音效反馈
  */
 #include "esp_log.h"
-
-#include "app_wifi.h"
+#include "max98357.h"
+#include "wifi_manager.h"
 
 static const char *TAG = "WIFI_APP";
 
-static wifi_prov_state_t s_state = WIFI_PROV_STATE_IDLE;
+/* 小星星旋律（BPM≈120）*/
+static const max98357_note_t s_twinkle[] = {
+    { NOTE_C4, BEAT_QUARTER }, { NOTE_C4, BEAT_QUARTER },
+    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
+    { NOTE_A4, BEAT_QUARTER }, { NOTE_A4, BEAT_QUARTER },
+    { NOTE_G4, BEAT_HALF    },
 
-/**
- * @brief  配网事件回调
- *
- * 功能：把 wifi_prov 的事件转为日志，更新内部状态机
- * 修改：2026-10-03 从 main.c 剪出，加入状态机更新
- *
- * @note   对应需求文档 4.3 的第 5、6 步：
- *         配网成功后 0.96" 屏显示状态、扩音器播报提示。
- *         当前阶段仅打印 + 状态保存。
- */
-static void on_wifi_event(wifi_prov_event_t event, void *ctx)
+    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
+    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
+    { NOTE_D4, BEAT_QUARTER }, { NOTE_D4, BEAT_QUARTER },
+    { NOTE_C4, BEAT_HALF    },
+
+    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
+    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
+    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
+    { NOTE_D4, BEAT_HALF    },
+
+    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
+    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
+    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
+    { NOTE_D4, BEAT_HALF    },
+
+    { NOTE_C4, BEAT_QUARTER }, { NOTE_C4, BEAT_QUARTER },
+    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
+    { NOTE_A4, BEAT_QUARTER }, { NOTE_A4, BEAT_QUARTER },
+    { NOTE_G4, BEAT_HALF    },
+
+    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
+    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
+    { NOTE_D4, BEAT_QUARTER }, { NOTE_D4, BEAT_QUARTER },
+    { NOTE_C4, BEAT_WHOLE  },
+
+    { 0, 0 }  /* 终止符 */
+};
+
+/* 配网模式提示音（两声短促）*/
+static const max98357_note_t s_portal_beep[] = {
+    { NOTE_E4, BEAT_EIGHTH }, { NOTE_G4, BEAT_EIGHTH },
+    { 0, 0 }
+};
+
+static bool s_played_success_tone = false;
+
+static void on_wifi_event(wifi_event_t event, void *ctx)
 {
     (void)ctx;
-
     switch (event) {
-    case WIFI_PROV_EVENT_AP_STARTED:
-        s_state = WIFI_PROV_STATE_PORTAL;
-        ESP_LOGW(TAG, "进入配网模式：手机连上 XIAOLE_WIFI（密码 12345678）即可自动弹出配网页");
+    case WIFI_EV_AP_STARTED:
+        ESP_LOGW(TAG, "配网模式已启动：连上热点后打开浏览器");
+        max98357_play_melody(s_portal_beep);
+        s_played_success_tone = false;
         break;
 
-    case WIFI_PROV_EVENT_CONNECTING:
-        s_state = WIFI_PROV_STATE_CONNECTING;
-        ESP_LOGI(TAG, "正在连接已保存的 WiFi ...");
+    case WIFI_EV_CONNECTING:
+        ESP_LOGI(TAG, "正在连接已保存的 WiFi …");
         break;
 
-    case WIFI_PROV_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "已关联热点，等待获取 IP ...");
+    case WIFI_EV_CONNECTED:
+        ESP_LOGI(TAG, "已关联热点，等待获取 IP …");
         break;
 
-    case WIFI_PROV_EVENT_GOT_IP:
-        s_state = WIFI_PROV_STATE_CONNECTED;
-        do {
-            char ip[16] = { 0 };
-            wifi_prov_get_ip(ip, sizeof(ip));
-            ESP_LOGI(TAG, "WiFi 已连接，IP=%s", ip);
-        } while (0);
-        break;
-
-    case WIFI_PROV_EVENT_DISCONNECTED:
-        if (s_state != WIFI_PROV_STATE_PORTAL) {
-            s_state = WIFI_PROV_STATE_FAILED;
+    case WIFI_EV_GOT_IP: {
+        char ip[16] = { 0 };
+        wifi_status_t st;
+        if (wifi_manager_get_status(&st) == ESP_OK) {
+            strncpy(ip, st.ip_address, sizeof(ip) - 1);
         }
+        ESP_LOGI(TAG, "WiFi 已连接，IP=%s", ip);
+        if (!s_played_success_tone) {
+            max98357_play_melody(s_twinkle);
+            s_played_success_tone = true;
+        }
+        break;
+    }
+
+    case WIFI_EV_DISCONNECTED:
         ESP_LOGW(TAG, "WiFi 已断开");
+        s_played_success_tone = false;
         break;
 
-    case WIFI_PROV_EVENT_FAILED:
-        s_state = WIFI_PROV_STATE_FAILED;
-        ESP_LOGW(TAG, "连接失败，已回落配网模式");
+    case WIFI_EV_FALLBACK:
+        ESP_LOGW(TAG, "连接失败，已进入配网模式");
         break;
 
     default:
@@ -73,21 +103,35 @@ static void on_wifi_event(wifi_prov_event_t event, void *ctx)
 
 void app_wifi_init(void)
 {
-    wifi_prov_set_callback(on_wifi_event, NULL);
-    ESP_ERROR_CHECK(wifi_prov_init());
-}
-
-wifi_prov_state_t app_wifi_get_state(void)
-{
-    return s_state;
+    wifi_manager_config_t cfg = {
+        .mode              = WIFI_MGR_MODE_AUTO,
+        .max_retry         = 5,
+        .retry_interval_ms = 3000,
+        .auto_reconnect    = true,
+        .enable_ntp        = true,
+        .ntp_server        = "cn.pool.ntp.org",
+        .fallback_ssid     = "XIAOLE_WIFI",
+        .fallback_pw       = "12345678",
+        .fallback_channel  = 6,
+        .event_cb          = on_wifi_event,
+        .event_cb_ctx      = NULL,
+    };
+    ESP_ERROR_CHECK(wifi_manager_init(&cfg));
 }
 
 bool app_wifi_is_connected(void)
 {
-    return wifi_prov_is_connected();
+    return wifi_manager_is_connected();
 }
 
 void app_wifi_get_ip(char *buf, uint32_t len)
 {
-    wifi_prov_get_ip(buf, len);
+    if (buf == NULL || len == 0) return;
+    wifi_status_t st;
+    if (wifi_manager_get_status(&st) == ESP_OK) {
+        strncpy(buf, st.ip_address, len - 1);
+        buf[len - 1] = '\0';
+    } else {
+        buf[0] = '\0';
+    }
 }

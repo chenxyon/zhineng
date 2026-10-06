@@ -18,6 +18,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -202,7 +203,88 @@ esp_err_t max98357_start_task(void)
                : ESP_ERR_NO_MEM;
 }
 
-bool max98357_is_ready(void)
+/**
+ * @brief  生成指定频率/时长的正弦波 PCM 缓冲
+ *
+ * 功能：使用静态相位累加器保持波形连续，避免切换音符时的咔嗒声
+ *
+ * @param freq          频率（Hz），传 0 生成静音
+ * @param duration_ms   时长（毫秒）
+ * @param out_buf       输出缓冲区（调用方需分配，至少 samples * sizeof(int16_t) 字节）
+ * @param samples       输出采样数（写回）
+ * @param amp           振幅（0..32767）
+ */
+static esp_err_t generate_sine(int16_t *out_buf, uint32_t *samples,
+                                float freq, uint32_t duration_ms, int16_t amp)
 {
-    return s_ready;
+    if (out_buf == NULL || samples == NULL || duration_ms == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* 计算总采样点数 */
+    uint32_t total = (uint32_t)s_cfg.sample_rate_hz * duration_ms / 1000;
+    if (total == 0) return ESP_ERR_INVALID_ARG;
+
+    *samples = total;
+
+    if (freq <= 0.0f) {
+        /* 静音：全零 */
+        memset(out_buf, 0, total * sizeof(int16_t));
+        return ESP_OK;
+    }
+
+    /* 相位增量：每采样点的弧度变化量 */
+    float phase_inc = 2.0f * (float)M_PI * freq / (float)s_cfg.sample_rate_hz;
+    /* 静态相位累加器：跨多次调用保持连续，消除咔嗒声 */
+    static float phase = 0.0f;
+
+    for (uint32_t i = 0; i < total; i++) {
+        out_buf[i] = (int16_t)(amp * sinf(phase));
+        phase += phase_inc;
+        if (phase >= 2.0f * (float)M_PI) {
+            phase -= 2.0f * (float)M_PI;
+        }
+    }
+    return ESP_OK;
 }
+
+esp_err_t max98357_play_tone(float freq, uint32_t duration_ms)
+{
+    if (!s_ready) return ESP_ERR_INVALID_STATE;
+    if (duration_ms == 0) duration_ms = s_cfg.beep_ms;
+
+    uint32_t samples = 0;
+    esp_err_t err = generate_sine(NULL, &samples, freq, duration_ms, 8000);
+    if (err != ESP_OK) return err;
+
+    int16_t *buf = malloc(samples * sizeof(int16_t));
+    if (buf == NULL) {
+        ESP_LOGE(TAG, "tone 缓冲分配失败 (%u 字节)", samples * (uint32_t)sizeof(int16_t));
+        return ESP_ERR_NO_MEM;
+    }
+
+    err = generate_sine(buf, &samples, freq, duration_ms, 8000);
+    if (err == ESP_OK) {
+        err = max98357_play(buf, samples * sizeof(int16_t), UINT32_MAX);
+    }
+    free(buf);
+    return err;
+}
+
+esp_err_t max98357_play_melody(const max98357_note_t *melody)
+{
+    if (!s_ready || melody == NULL) return ESP_ERR_INVALID_ARG;
+
+    for (uint32_t i = 0; melody[i].duration_ms != 0 || melody[i].freq != 0; i++) {
+        /* 终止符：{.freq=0, .duration_ms=0} */
+        if (melody[i].freq <= 0.0f && melody[i].duration_ms == 0) break;
+        esp_err_t err = max98357_play_tone(melody[i].freq, melody[i].duration_ms);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "播放音符失败: freq=%.1f dur=%u", melody[i].freq,
+                     melody[i].duration_ms);
+            return err;
+        }
+    }
+    return ESP_OK;
+}
+

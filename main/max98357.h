@@ -24,6 +24,36 @@ extern "C" {
 #endif
 
 /**
+ * 音符频率定义（Hz）
+ *
+ * 功能：标准十二平均律，供 melody 数组引用
+ * 修改：2026-10-06 新增，参照 Arduino 音频示例
+ */
+#define NOTE_C4  261.63f
+#define NOTE_D4  293.66f
+#define NOTE_E4  329.63f
+#define NOTE_F4  349.23f
+#define NOTE_G4  392.00f
+#define NOTE_A4  440.00f
+#define NOTE_B4  493.88f
+#define NOTE_C5  523.25f
+
+/**
+ * 节拍时长定义（ms，BPM ≈ 120）
+ *
+ * 功能：供 melody 数组引用
+ * 修改：2026-10-06 新增
+ */
+#define BEAT_QUARTER  250u   /* 四分音符 */
+#define BEAT_EIGHTH   125u   /* 八分音符 */
+#define BEAT_HALF     500u   /* 二分音符 */
+#define BEAT_WHOLE   1000u   /* 全音符 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
  * MAX98357 硬件与音频配置
  *
  * 功能：集中描述本设备所需引脚与音频参数，由 board.c 构造后注入 init
@@ -113,6 +143,49 @@ void max98357_set_selftest_beep(bool enable);
  * 修改：2026-10-03 新增
  */
 bool max98357_is_ready(void);
+
+/* ==================== 正弦波 / 旋律播放（2026-10-06 新增） ==================== */
+
+/**
+ * @brief  音符结构体
+ *
+ * 功能：描述一段旋律中的一个音
+ * 修改：2026-10-06 新增
+ */
+typedef struct {
+    float  freq;        /*!< 频率（Hz），可直接用 NOTE_C4 等宏 */
+    uint32_t duration_ms;  /*!< 时长（毫秒）*/
+} max98357_note_t;
+
+/**
+ * @brief  播放单个正弦波音符
+ *
+ * 功能：生成指定频率的正弦波 PCM，阻塞发送直到播放完毕
+ *
+ * @param freq       频率（Hz），传 0 表示静音
+ * @param duration_ms  时长（毫秒），0 表示使用 beep_ms 默认值
+ * @return ESP_OK 成功
+ */
+esp_err_t max98357_play_tone(float freq, uint32_t duration_ms);
+
+/**
+ * @brief  播放预设旋律
+ *
+ * 功能：按音符数组依次播放正弦波音符，阻塞直到全部播完
+ *
+ * @param melody   音符数组（必须以 {.freq=0, .duration_ms=0} 结尾）
+ * @return ESP_OK 成功
+ *
+ * 示例（小星星）：
+ *   max98357_note_t twinkle[] = {
+ *       { NOTE_C4, BEAT_QUARTER }, { NOTE_C4, BEAT_QUARTER },
+ *       { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
+ *       ...
+ *       { 0, 0 }  // 终止符
+ *   };
+ *   max98357_play_melody(twinkle);
+ */
+esp_err_t max98357_play_melody(const max98357_note_t *melody);
 
 #ifdef __cplusplus
 }
