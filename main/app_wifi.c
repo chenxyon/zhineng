@@ -55,25 +55,25 @@ static const max98357_note_t s_portal_beep[] = {
 
 static bool s_played_success_tone = false;
 
-static void on_wifi_event(wifi_event_t event, void *ctx)
+static void on_wifi_event(wifi_mgr_event_t event, void *ctx)
 {
     (void)ctx;
     switch (event) {
-    case WIFI_EV_AP_STARTED:
+    case WIFI_MGR_EV_AP_STARTED:
         ESP_LOGW(TAG, "配网模式已启动：连上热点后打开浏览器");
         max98357_play_melody(s_portal_beep);
         s_played_success_tone = false;
         break;
 
-    case WIFI_EV_CONNECTING:
+    case WIFI_MGR_EV_CONNECTING:
         ESP_LOGI(TAG, "正在连接已保存的 WiFi …");
         break;
 
-    case WIFI_EV_CONNECTED:
+    case WIFI_MGR_EV_CONNECTED:
         ESP_LOGI(TAG, "已关联热点，等待获取 IP …");
         break;
 
-    case WIFI_EV_GOT_IP: {
+    case WIFI_MGR_EV_GOT_IP: {
         char ip[16] = { 0 };
         wifi_status_t st;
         if (wifi_manager_get_status(&st) == ESP_OK) {
@@ -87,12 +87,12 @@ static void on_wifi_event(wifi_event_t event, void *ctx)
         break;
     }
 
-    case WIFI_EV_DISCONNECTED:
+    case WIFI_MGR_EV_DISCONNECTED:
         ESP_LOGW(TAG, "WiFi 已断开");
         s_played_success_tone = false;
         break;
 
-    case WIFI_EV_FALLBACK:
+    case WIFI_MGR_EV_FALLBACK:
         ESP_LOGW(TAG, "连接失败，已进入配网模式");
         break;
 
