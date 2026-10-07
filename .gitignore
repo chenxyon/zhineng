@@ -1,2 +1,3 @@
 ﻿build/
-build/
+/cmake_out*.txt
+/ninja_out*txt
