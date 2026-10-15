@@ -11,14 +11,26 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "wifi_manager.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
+ * @brief  WiFi 事件上层通知回调（供 app_voice 等订阅播报）
+ */
+typedef void (*app_wifi_notify_cb_t)(wifi_mgr_event_t event, void *ctx);
+
+/**
  * @brief  初始化 WiFi 管理器（自动选择连接/配网模式）
  */
 void app_wifi_init(void);
+
+/**
+ * @brief  注册上层事件通知（播报等逻辑由上层承接，本层不碰音频）
+ */
+void app_wifi_set_notify_cb(app_wifi_notify_cb_t cb, void *ctx);
 
 /**
  * @brief  查询是否已连接外网

@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "board.c"
         "app_wifi.c"
+        "app_voice.c"
         "oled_spi.c"
         "max98357.c"
         "inmp441.c"
@@ -19,4 +20,5 @@ idf_component_register(
         esp_netif
         nvs_flash
         wifi_manager
+        tts_hub
 )

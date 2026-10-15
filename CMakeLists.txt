@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 
 # 挂载共享自定义组件库
 #
@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.16)
 # 从而避免引入 LVGL 等重型依赖。索引见 d:\components\COMPONENTS.md
 set(EXTRA_COMPONENT_DIRS
     "D:/components/wifi_manager"
+    "D:/components/tts_hub"
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

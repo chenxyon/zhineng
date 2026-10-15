@@ -2,58 +2,27 @@
  * @file     app_wifi.c
  * @brief    WiFi 配网业务层
  *
- * 功能：配网事件回调、状态查询、WiFi 连接成功时播放旋律
- * 修改：2026-10-06 合并 wifi_prov，改用 wifi_manager API；
- *          加入「连接成功 → 小星星」音效反馈
+ * 功能：配网事件回调、状态查询；纯 WiFi，不依赖功放/TTS，
+ *       音频播报由上层通过 app_wifi_set_notify_cb() 订阅事件后自行处理。
+ * 修改：2026-10-06 合并 wifi_prov，改用 wifi_manager API
+ * 修改：2026-10-14 去耦：移除 max98357/tts_hub 依赖，
+ *       新增通知回调转发，播报逻辑下沉到 app_voice
  */
 #include "esp_log.h"
-#include "max98357.h"
 #include "wifi_manager.h"
+#include "app_wifi.h"
 
 static const char *TAG = "WIFI_APP";
 
-/* 小星星旋律（BPM≈120）*/
-static const max98357_note_t s_twinkle[] = {
-    { NOTE_C4, BEAT_QUARTER }, { NOTE_C4, BEAT_QUARTER },
-    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
-    { NOTE_A4, BEAT_QUARTER }, { NOTE_A4, BEAT_QUARTER },
-    { NOTE_G4, BEAT_HALF    },
+/* 上层通知回调：app_voice 注册进来收 WiFi 事件，app_wifi 本身不碰音频 */
+static app_wifi_notify_cb_t s_notify_cb = NULL;
+static void *s_notify_ctx = NULL;
 
-    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
-    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
-    { NOTE_D4, BEAT_QUARTER }, { NOTE_D4, BEAT_QUARTER },
-    { NOTE_C4, BEAT_HALF    },
-
-    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
-    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
-    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
-    { NOTE_D4, BEAT_HALF    },
-
-    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
-    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
-    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
-    { NOTE_D4, BEAT_HALF    },
-
-    { NOTE_C4, BEAT_QUARTER }, { NOTE_C4, BEAT_QUARTER },
-    { NOTE_G4, BEAT_QUARTER }, { NOTE_G4, BEAT_QUARTER },
-    { NOTE_A4, BEAT_QUARTER }, { NOTE_A4, BEAT_QUARTER },
-    { NOTE_G4, BEAT_HALF    },
-
-    { NOTE_F4, BEAT_QUARTER }, { NOTE_F4, BEAT_QUARTER },
-    { NOTE_E4, BEAT_QUARTER }, { NOTE_E4, BEAT_QUARTER },
-    { NOTE_D4, BEAT_QUARTER }, { NOTE_D4, BEAT_QUARTER },
-    { NOTE_C4, BEAT_WHOLE  },
-
-    { 0, 0 }  /* 终止符 */
-};
-
-/* 配网模式提示音（两声短促）*/
-static const max98357_note_t s_portal_beep[] = {
-    { NOTE_E4, BEAT_EIGHTH }, { NOTE_G4, BEAT_EIGHTH },
-    { 0, 0 }
-};
-
-static bool s_played_success_tone = false;
+void app_wifi_set_notify_cb(app_wifi_notify_cb_t cb, void *ctx)
+{
+    s_notify_cb = cb;
+    s_notify_ctx = ctx;
+}
 
 static void on_wifi_event(wifi_mgr_event_t event, void *ctx)
 {
@@ -61,8 +30,6 @@ static void on_wifi_event(wifi_mgr_event_t event, void *ctx)
     switch (event) {
     case WIFI_MGR_EV_AP_STARTED:
         ESP_LOGW(TAG, "配网模式已启动：连上热点后打开浏览器");
-        max98357_play_melody(s_portal_beep);
-        s_played_success_tone = false;
         break;
 
     case WIFI_MGR_EV_CONNECTING:
@@ -80,16 +47,11 @@ static void on_wifi_event(wifi_mgr_event_t event, void *ctx)
             strncpy(ip, st.ip_address, sizeof(ip) - 1);
         }
         ESP_LOGI(TAG, "WiFi 已连接，IP=%s", ip);
-        if (!s_played_success_tone) {
-            max98357_play_melody(s_twinkle);
-            s_played_success_tone = true;
-        }
         break;
     }
 
     case WIFI_MGR_EV_DISCONNECTED:
         ESP_LOGW(TAG, "WiFi 已断开");
-        s_played_success_tone = false;
         break;
 
     case WIFI_MGR_EV_FALLBACK:
@@ -98,6 +60,10 @@ static void on_wifi_event(wifi_mgr_event_t event, void *ctx)
 
     default:
         break;
+    }
+    /* 转发给上层（如 app_voice 做播报），本层不直接播音 */
+    if (s_notify_cb) {
+        s_notify_cb(event, s_notify_ctx);
     }
 }
 

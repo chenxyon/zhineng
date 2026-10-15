@@ -3800,7 +3800,7 @@ CONFIG_WIFI_CONFIG_MODE_PHONE=y
 # default:
 # CONFIG_WIFI_CONFIG_MODE_SCREEN is not set
 # default:
-CONFIG_WIFI_MGR_DEV_MODE=y
+# CONFIG_WIFI_MGR_DEV_MODE is not set
 # default:
 CONFIG_WIFI_MANAGER_MAX_RETRY_COUNT=3
 # default:
@@ -3824,6 +3824,24 @@ CONFIG_WIFI_SOFTAP_CHANNEL=1
 # default:
 CONFIG_WIFI_WEBSERVER_PORT=80
 # end of WIFI Manager Configuration
+
+#
+# cJSON
+#
+# default:
+CONFIG_CJSON_NESTING_LIMIT=1000
+# default:
+CONFIG_CJSON_CIRCULAR_LIMIT=10000
+# end of cJSON
+
+#
+# ESP WebSocket client
+#
+# default:
+# CONFIG_ESP_WS_CLIENT_ENABLE_DYNAMIC_BUFFER is not set
+# default:
+# CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK is not set
+# end of ESP WebSocket client
 # end of Component config
 
 # CONFIG_IDF_EXPERIMENTAL_FEATURES is not set

@@ -23,8 +23,16 @@
 #include "driver/gpio.h"
 
 #include "board.h"
+#include "tts_hub.h"
 
 static const char *TAG = "BOARD";
+
+/* tts_hub PCM 输出槽适配：把 (pcm, bytes, ctx) 转成 max98357_play() 调用 */
+static esp_err_t board_tts_sink(const int16_t *pcm, size_t bytes, void *ctx)
+{
+    (void)ctx;
+    return max98357_play(pcm, bytes, 5000);
+}
 
 /* ====================== 本板引脚定义（唯一可信来源） ====================== */
 
@@ -168,6 +176,11 @@ void board_init_devices(void)
     gpio_set_level(GPIO_NUM_38, 1);  /* GAIN 拉高 */
     ESP_ERROR_CHECK(max98357_init(&k_audio_pins));
     ESP_ERROR_CHECK(max98357_start_task());
+
+    /* TTS 输出槽：讯飞合成出的 PCM 经 tts_hub 重采样后走这里推 I2S。
+     * 与 tts_hub.c 里默认 dst_hz=22050 对齐（k_audio_pins 采样率同为 22050）。 */
+    ESP_ERROR_CHECK(tts_hub_set_sink(board_tts_sink, NULL));
+    ESP_ERROR_CHECK(tts_hub_init());
 
     /* 上电单响一次：确认喇叭链路通（全双工改造后首次验证）。
        自测循环默认关（max98357_set_selftest_beep(false)），避免持续响；
